@@ -15,11 +15,13 @@ jobs:
         include:
         - os: Linux
           pool: ubuntu-latest
+          timeout: 2
         - os: Windows
           pool: windows-latest
+          timeout: 5
     name: Run tests on ${{ matrix.os }}
     runs-on: ${{ matrix.pool }}
-    timeout-minutes: 2
+    timeout-minutes: ${{ matrix.timeout }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
 
