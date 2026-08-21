@@ -16,9 +16,9 @@ jobs:
         - os: Linux
           pool: ubuntu-latest
           timeout: 2
-        # - os: Windows
-        #   pool: windows-latest
-        #   timeout: 5
+        - os: Windows
+          pool: windows-latest
+          timeout: 5
     name: Run tests on ${{ matrix.os }}
     runs-on: ${{ matrix.pool }}
     timeout-minutes: ${{ matrix.timeout }}
@@ -44,13 +44,24 @@ jobs:
           path: test-results.xml
           reporter: java-junit
 
-      - name: Build worker Docker image
-        run: |
-          docker compose build
+      # - name: Build worker Docker image
+      #   run: |
+      #     docker compose build
+
+      # - name: Start the kvd
+      #   run: |
+      #     docker compose up -d
 
       - name: Start the kvd
+        shell: bash
         run: |
-          docker compose up -d
+          go run ./cmd > kvd.log 2>&1 &
+          KVD_PID=$!
+          echo "KVD_PID=$KVD_PID" > "$GITHUB_ENV"s
+          
+          until curl -s http://localhost:8080 > /dev/null; do
+            echo . && sleep 1
+          done
 
       - name: Setup k6
         uses: grafana/setup-k6-action@db07bd9765aac508ef18982e52ab937fe633a065 # v1.2.1
@@ -61,6 +72,18 @@ jobs:
         uses: grafana/run-k6-action@de51a7390bdf0ac85a3bef493691bd71d4c7c158 # v1.4.0
         with:
           path: k6/*.js
+
+      - name: Stop the kvd
+        if: always()
+        shell: bash
+        run: |
+          kill "$KVD_PID" 2>/dev/null || true
+
+      - name: Print the kvd logs
+        if: always()
+        shell: bash
+        run: |
+          cat kvd.log
 
       - name: Report k6
         if: always()
