@@ -1,0 +1,123 @@
+basePath: /v1
+definitions:
+  api.ErrorResponse:
+    properties:
+      error:
+        example: Value is required
+        type: string
+    type: object
+  v1.CountResponse:
+    properties:
+      size:
+        type: integer
+    type: object
+  v1.EntryResponse:
+    properties:
+      key:
+        type: string
+      value:
+        type: string
+    type: object
+  v1.PutEntryRequest:
+    properties:
+      value:
+        type: string
+    type: object
+info:
+  contact: {}
+  description: Key-value database API.
+  title: KVD API
+  version: "1.0"
+paths:
+  /count:
+    get:
+      description: Returns the total number of stored entries.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.CountResponse'
+      summary: Count entries
+      tags:
+      - keys
+  /keys/{key}:
+    delete:
+      description: Deletes the entry associated with the specified key.
+      parameters:
+      - description: Entry key
+        in: path
+        name: key
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Key is required
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "404":
+          description: Entry not found
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Delete an entry
+      tags:
+      - keys
+    get:
+      description: Retrieves a stored value by its key.
+      parameters:
+      - description: Entry key
+        in: path
+        name: key
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.EntryResponse'
+        "400":
+          description: Key is required
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "404":
+          description: Entry not found
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Get an entry
+      tags:
+      - keys
+    put:
+      consumes:
+      - application/json
+      description: Stores a value under the specified key. If the key already exists,
+        its value is replaced.
+      parameters:
+      - description: Entry key
+        in: path
+        name: key
+        required: true
+        type: string
+      - description: Entry to store
+        in: body
+        name: entry
+        required: true
+        schema:
+          $ref: '#/definitions/v1.PutEntryRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Create or update an entry
+      tags:
+      - keys
+swagger: "2.0"

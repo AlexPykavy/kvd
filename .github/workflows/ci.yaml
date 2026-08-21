@@ -1,0 +1,68 @@
+name: worker tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  worker_tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [Linux, Windows]
+        include:
+        - os: Linux
+          pool: ubuntu-latest
+        - os: Windows
+          pool: windows-latest
+    name: Run tests on ${{ matrix.os }}
+    runs-on: ${{ matrix.pool }}
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
+        with:
+          go-version: "1.23.6"
+
+      - name: Run tests
+        run: |
+          go install github.com/jstemmer/go-junit-report/v2@latest
+          set -o pipefail
+          go test -race -cover -v ./... 2>&1 | go-junit-report -set-exit-code > test-results.xml
+
+      - name: Publish test results
+        if: always()
+        uses: dorny/test-reporter@a43b3a5f7366b97d083190328d2c652e1a8b6aa2 # v3.0.0
+        with:
+          name: Go tests
+          path: test-results.xml
+          reporter: java-junit
+
+      - name: Build worker Docker image
+        run: |
+          docker compose build
+
+      - name: Start the kvd
+        run: |
+          docker compose up -d
+
+      - name: Setup k6
+        uses: grafana/setup-k6-action@db07bd9765aac508ef18982e52ab937fe633a065 # v1.2.1
+        with:
+          k6-version: '1.2.2'
+
+      - name: Run k6
+        uses: grafana/run-k6-action@de51a7390bdf0ac85a3bef493691bd71d4c7c158 # v1.4.0
+        with:
+          path: k6/*.js
+
+      - name: Report k6
+        if: always()
+        uses: dorny/test-reporter@a43b3a5f7366b97d083190328d2c652e1a8b6aa2
+        with:
+          name: k6 performance
+          path: k6.*.junit.xml
+          reporter: java-junit
