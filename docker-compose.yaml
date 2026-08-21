@@ -1,0 +1,10 @@
+services:
+  kvd:
+    build: .
+    deploy:
+      resources:
+        limits:
+          cpus: 1
+          memory: 512MB
+    ports:
+      - 8080:8080
