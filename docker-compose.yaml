@@ -1,6 +1,8 @@
 services:
   kvd:
     build: .
+    command:
+      - --capacity=1000
     deploy:
       resources:
         limits:

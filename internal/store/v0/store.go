@@ -6,10 +6,30 @@ type Store struct {
 	m map[string]string
 }
 
-func NewStore() *Store {
-	return &Store{
-		m: make(map[string]string),
+type StoreOption func(*Store)
+
+func WithCapacity(n int) StoreOption {
+	return func(s *Store) {
+		s.m = make(map[string]string, n)
 	}
+}
+
+func NewStore(options ...StoreOption) *Store {
+	s := &Store{}
+
+	for _, option := range options {
+		option(s)
+	}
+
+	if s.m == nil {
+		s.m = make(map[string]string)
+	}
+
+	return s
+}
+
+func (s *Store) IsThreadSafe() bool {
+	return false
 }
 
 func (s *Store) Put(key, value string) error {

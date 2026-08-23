@@ -34,7 +34,7 @@ jobs:
         run: |
           go install github.com/jstemmer/go-junit-report/v2@latest
           set -o pipefail
-          go test -race -cover -v ./... 2>&1 | go-junit-report -set-exit-code > test-results.xml
+          go test -race -cover -v ./... 2>&1 | go-junit-report -set-exit-code -iocopy -out test-results.xml
 
       - name: Publish test results
         if: always()
@@ -43,6 +43,24 @@ jobs:
           name: Go tests
           path: test-results.xml
           reporter: java-junit
+
+      - name: Run benchmark
+        shell: bash
+        run: |
+          go install github.com/jstemmer/go-junit-report/v2@latest
+          set -o pipefail
+          make bench | go-junit-report -set-exit-code -iocopy -out benchmark-results.xml || {
+            echo "::warning::Benchmarks failed, but CI will continue"
+          }
+
+      - name: Publish benchmark results
+        if: always()
+        uses: dorny/test-reporter@a43b3a5f7366b97d083190328d2c652e1a8b6aa2 # v3.0.0
+        with:
+          name: Go benchmark
+          path: benchmark-results.xml
+          reporter: java-junit
+          fail-on-error: false
 
       # - name: Build worker Docker image
       #   run: |

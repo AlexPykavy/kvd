@@ -17,4 +17,4 @@ COPY --from=build /kvd ./kvd
 COPY --from=build /src/docs/v1/swagger.json ./docs/v1/swagger.json
 
 EXPOSE 8080
-CMD ["/app/kvd"]
+ENTRYPOINT ["/app/kvd"]
