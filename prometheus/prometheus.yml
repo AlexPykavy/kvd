@@ -1,0 +1,8 @@
+scrape_configs:
+  - job_name: kvd
+    scrape_interval: 1s
+    dns_sd_configs:
+      - names:
+          - kvd
+        type: A
+        port: 8080
