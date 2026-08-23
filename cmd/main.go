@@ -1,9 +1,13 @@
 package main
 
 import (
+	"kvd/api/middleware"
 	v1api "kvd/api/v1"
 	v0store "kvd/internal/store/v0"
+	"log/slog"
+	"os"
 
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	httpSwagger "github.com/swaggo/http-swagger"
 
 	"log"
@@ -11,6 +15,10 @@ import (
 )
 
 func main() {
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+		Level: slog.LevelInfo,
+	}))
+
 	s := v0store.NewStore()
 	v1Handler := v1api.NewStoreHandler(s)
 
@@ -19,12 +27,14 @@ func main() {
 	v1.HandleFunc("GET /keys/{key}", v1Handler.Get)
 	v1.HandleFunc("DELETE /keys/{key}", v1Handler.Delete)
 	v1.HandleFunc("GET /count", v1Handler.Count)
-	v1.HandleFunc("GET /swagger/spec", func(w http.ResponseWriter, r *http.Request) {
+
+	mux := http.NewServeMux()
+	mux.Handle("/v1/", http.StripPrefix("/v1", middleware.InstrumentMiddleware(logger)(v1)))
+	mux.HandleFunc("GET /v1/swagger/spec", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "./docs/v1/swagger.json")
 	})
 
-	mux := http.NewServeMux()
-	mux.Handle("/v1/", http.StripPrefix("/v1", v1))
+	mux.Handle("/metrics", promhttp.Handler())
 	mux.Handle("/swagger/", httpSwagger.Handler(
 		httpSwagger.UIConfig(map[string]string{
 			"urls": `[

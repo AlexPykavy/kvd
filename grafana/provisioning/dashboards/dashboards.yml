@@ -1,0 +1,11 @@
+apiVersion: 1
+
+providers:
+  - name: 'Go Applications'
+    orgId: 1
+    folder: 'Go Metrics'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 10
+    options:
+      path: /etc/grafana/provisioning/dashboards

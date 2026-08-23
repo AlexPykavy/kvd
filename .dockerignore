@@ -6,7 +6,9 @@
 
 bin/
 db/
+grafana/
 k6/
+prometheus/
 tmp/
 
 *.log

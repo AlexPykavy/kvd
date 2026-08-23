@@ -37,11 +37,13 @@ export default function () {
         "GET /v1/keys/{key} returns 200": (r) => r.status === 200,
     });
 
-    const count = http.get(`${BASE_URL}/v1/count`);
+    for (let i = 0; i < 1; i++) {
+        const count = http.get(`${BASE_URL}/v1/count`);
 
-    check(count, {
-        "GET /v1/count returns 200": (r) => r.status === 200,
-    });
+        check(count, {
+            "GET /v1/count returns 200": (r) => r.status === 200,
+        });
+    }
 
     const del = http.del(`${BASE_URL}/v1/keys/${key}`);
 

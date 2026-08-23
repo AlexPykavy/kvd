@@ -11,7 +11,10 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o /kvd ./cmd
 
 FROM scratch
 
-COPY --from=build /kvd /kvd
+WORKDIR /app
+
+COPY --from=build /kvd ./kvd
+COPY --from=build /src/docs/v1/swagger.json ./docs/v1/swagger.json
 
 EXPOSE 8080
-CMD ["/kvd"]
+CMD ["/app/kvd"]
