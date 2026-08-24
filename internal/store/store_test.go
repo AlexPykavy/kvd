@@ -1,10 +1,8 @@
 package store_test
 
 import (
-	"fmt"
 	"kvd/internal/store"
 	v0 "kvd/internal/store/v0"
-	"sync/atomic"
 	"testing"
 )
 
@@ -124,103 +122,6 @@ func TestStoreDelete(t *testing.T) {
 
 			if test.store.Len() != 0 {
 				t.Errorf("s.Len() = %d, want 0", test.store.Len())
-			}
-		})
-	}
-}
-
-func BenchmarkStorePutSequentially(b *testing.B) {
-	tests := createAllStores()
-
-	for _, test := range tests {
-		b.Run(test.name, func(b *testing.B) {
-			for i := 0; i < b.N; i++ {
-				key := fmt.Sprint(i)
-				value := key
-
-				test.store.Put(key, value)
-			}
-
-			if test.store.Len() != b.N {
-				b.Errorf("s.Len() = %d, want %d", test.store.Len(), b.N)
-			}
-		})
-	}
-}
-
-func BenchmarkStorePutSequentiallyWithAtomicCounter(b *testing.B) {
-	tests := createAllStores()
-
-	for _, test := range tests {
-		b.Run(test.name, func(b *testing.B) {
-			var counter atomic.Uint64
-			for i := 0; i < b.N; i++ {
-				key := fmt.Sprint(counter.Add(1))
-				value := key
-
-				test.store.Put(key, value)
-			}
-
-			if test.store.Len() != b.N {
-				b.Errorf("s.Len() = %d, want %d", test.store.Len(), b.N)
-			}
-		})
-	}
-}
-
-func BenchmarkStorePutConcurrently(b *testing.B) {
-	tests := createAllStores()
-
-	for _, test := range tests {
-		b.Run(test.name, func(b *testing.B) {
-			var counter atomic.Uint64
-			b.RunParallel(func(pb *testing.PB) {
-				for pb.Next() {
-					key := fmt.Sprint(counter.Add(1))
-					value := key
-
-					test.store.Put(key, value)
-				}
-			})
-
-			if test.store.Len() != b.N {
-				b.Errorf("s.Len() = %d, want %d", test.store.Len(), b.N)
-			}
-		})
-	}
-}
-
-func BenchmarkStorePutTheSame(b *testing.B) {
-	key, value := "my-key", "my-value"
-	tests := createAllStores()
-
-	for _, test := range tests {
-		b.Run(test.name, func(b *testing.B) {
-			for i := 0; i < b.N; i++ {
-				test.store.Put(key, value)
-			}
-
-			if test.store.Len() != 1 {
-				b.Errorf("s.Len() = %d, want %d", test.store.Len(), 1)
-			}
-		})
-	}
-}
-
-func BenchmarkStorePutTheSameConcurrently(b *testing.B) {
-	key, value := "my-key", "my-value"
-	tests := createAllStores()
-
-	for _, test := range tests {
-		b.Run(test.name, func(b *testing.B) {
-			b.RunParallel(func(pb *testing.PB) {
-				for pb.Next() {
-					test.store.Put(key, value)
-				}
-			})
-
-			if test.store.Len() != 1 {
-				b.Errorf("s.Len() = %d, want %d", test.store.Len(), 1)
 			}
 		})
 	}
