@@ -1,9 +1,10 @@
 .PHONY: bench test swagger swagger-fmt
 
+BENCH=.
 SWAG := swag
 
 bench:
-	go test -run '^$$' -bench=. -benchtime=10000000x -benchmem -v ./... 2>&1
+	go test -run '^$$' -bench=$(BENCH) -benchtime=1000000x -benchmem -v ./... 2>&1
 
 test:
 	go test -race -cover -v ./... 2>&1
