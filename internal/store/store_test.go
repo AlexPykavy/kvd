@@ -3,6 +3,7 @@ package store_test
 import (
 	"kvd/internal/store"
 	v0 "kvd/internal/store/v0"
+	v1 "kvd/internal/store/v1"
 	"testing"
 )
 
@@ -15,6 +16,9 @@ func createAllStores() []struct {
 		store store.Store
 	}{
 		{"v0", v0.NewStore()},
+		{"v1", v1.NewStore()},
+		{"v1", v1.NewStore(v1.WithMutex())},
+		{"v1", v1.NewStore(v1.WithRWMutex())},
 	}
 }
 

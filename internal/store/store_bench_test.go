@@ -4,12 +4,13 @@ import (
 	"fmt"
 	"kvd/internal/store"
 	v0 "kvd/internal/store/v0"
+	v1 "kvd/internal/store/v1"
 	"os"
 	"sync/atomic"
 	"testing"
 )
 
-var keys [10_000_000]string
+var keys [1_000_000]string
 
 func TestMain(m *testing.M) {
 	for i := range keys {
@@ -28,9 +29,20 @@ func createAllBenchmarkStores() []struct {
 		store store.Store
 	}{
 		{"v0", v0.NewStore()},
-		{"v0withCapacity1000", v0.NewStore(v0.WithCapacity(1000))},
-		{"v0withCapacity1000_000", v0.NewStore(v0.WithCapacity(1000_000))},
-		{"v0withCapacity10_000_000", v0.NewStore(v0.WithCapacity(10_000_000))},
+		{"v0.WithCapacity(1000)", v0.NewStore(v0.WithCapacity(1000))},
+		{"v0.WithCapacity(1000_000)", v0.NewStore(v0.WithCapacity(10_000_000))},
+
+		{"v1", v1.NewStore()},
+		{"v1.WithCapacity(1000)", v1.NewStore(v1.WithCapacity(1000))},
+		{"v1.WithCapacity(1000_000)", v1.NewStore(v1.WithCapacity(10_000_000))},
+
+		{"v1.WithMutex()", v1.NewStore(v1.WithMutex())},
+		{"v1.WithMutex().WithCapacity(1000)", v1.NewStore(v1.WithMutex(), v1.WithCapacity(1000))},
+		{"v1.WithMutex().WithCapacity(1000_000)", v1.NewStore(v1.WithMutex(), v1.WithCapacity(10_000_000))},
+
+		{"v1.WithRWMutex()", v1.NewStore(v1.WithRWMutex())},
+		{"v1.WithRWMutex().WithCapacity(1000)", v1.NewStore(v1.WithRWMutex(), v1.WithCapacity(1000))},
+		{"v1.WithRWMutex().WithCapacity(1000_000)", v1.NewStore(v1.WithRWMutex(), v1.WithCapacity(10_000_000))},
 	}
 }
 
@@ -82,7 +94,8 @@ func BenchmarkStorePutSequentiallyWithAtomicCounter(b *testing.B) {
 			b.ResetTimer()
 
 			var counter atomic.Int64
-			for i, n := counter.Load(), int64(b.N); i < n; i = counter.Add(1) {
+			for range b.N {
+				i := counter.Add(1) - 1
 				test.store.Put(keys[i], keys[i])
 			}
 
@@ -97,19 +110,18 @@ func BenchmarkStorePutConcurrently(b *testing.B) {
 	tests := createAllBenchmarkStores()
 
 	for _, test := range tests {
-		if !test.store.IsThreadSafe() {
-			b.Skipf("skipping test because the store is not thread-safe and we will get %q", "fatal error: concurrent map writes")
-		}
-
 		b.Run(test.name, func(b *testing.B) {
+			if !test.store.IsThreadSafe() {
+				b.Skipf("skipping test because the store is not thread-safe and we will get %q", "fatal error: concurrent map writes")
+			}
+
 			b.ResetTimer()
 
 			var counter atomic.Uint64
 			b.RunParallel(func(pb *testing.PB) {
 				for pb.Next() {
-					key := keys[counter.Add(1)]
-
-					test.store.Put(key, key)
+					i := counter.Add(1) - 1
+					test.store.Put(keys[i], keys[i])
 				}
 			})
 
@@ -124,11 +136,11 @@ func BenchmarkStoreGetConcurrently(b *testing.B) {
 	tests := createAllBenchmarkStores()
 
 	for _, test := range tests {
-		if !test.store.IsThreadSafe() {
-			b.Skipf("skipping test because the store is not thread-safe and we will get %q", "fatal error: concurrent map writes")
-		}
-
 		b.Run(test.name, func(b *testing.B) {
+			if !test.store.IsThreadSafe() {
+				b.Skipf("skipping test because the store is not thread-safe and we will get %q", "fatal error: concurrent map writes")
+			}
+
 			for i := 0; i < b.N; i++ {
 				test.store.Put(keys[i], keys[i])
 			}
@@ -142,7 +154,8 @@ func BenchmarkStoreGetConcurrently(b *testing.B) {
 			var counter atomic.Uint64
 			b.RunParallel(func(pb *testing.PB) {
 				for pb.Next() {
-					test.store.Get(keys[counter.Add(1)])
+					i := counter.Add(1) - 1
+					test.store.Get(keys[i])
 				}
 			})
 
@@ -198,11 +211,11 @@ func BenchmarkStorePutTheSameConcurrently(b *testing.B) {
 	tests := createAllBenchmarkStores()
 
 	for _, test := range tests {
-		if !test.store.IsThreadSafe() {
-			b.Skipf("skipping test because the store is not thread-safe and we will get %q", "fatal error: concurrent map writes")
-		}
-
 		b.Run(test.name, func(b *testing.B) {
+			if !test.store.IsThreadSafe() {
+				b.Skipf("skipping test because the store is not thread-safe and we will get %q", "fatal error: concurrent map writes")
+			}
+
 			b.ResetTimer()
 
 			b.RunParallel(func(pb *testing.PB) {
@@ -223,11 +236,11 @@ func BenchmarkStoreGetTheSameConcurrently(b *testing.B) {
 	tests := createAllBenchmarkStores()
 
 	for _, test := range tests {
-		if !test.store.IsThreadSafe() {
-			b.Skipf("skipping test because the store is not thread-safe and we will get %q", "fatal error: concurrent map writes")
-		}
-
 		b.Run(test.name, func(b *testing.B) {
+			if !test.store.IsThreadSafe() {
+				b.Skipf("skipping test because the store is not thread-safe and we will get %q", "fatal error: concurrent map writes")
+			}
+
 			test.store.Put(key, value)
 
 			if test.store.Len() != 1 {

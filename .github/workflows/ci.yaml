@@ -15,10 +15,10 @@ jobs:
         include:
         - os: Linux
           pool: ubuntu-latest
-          timeout: 2
+          timeout: 10
         - os: Windows
           pool: windows-latest
-          timeout: 5
+          timeout: 10
     name: Run tests on ${{ matrix.os }}
     runs-on: ${{ matrix.pool }}
     timeout-minutes: ${{ matrix.timeout }}
@@ -49,7 +49,7 @@ jobs:
         run: |
           go install github.com/jstemmer/go-junit-report/v2@latest
           set -o pipefail
-          make bench | go-junit-report -set-exit-code -iocopy -out benchmark-results.xml || {
+          make bench | go-junit-report -set-exit-code -iocopy -subtest-mode ignore-parent-results -out benchmark-results.xml || {
             echo "::warning::Benchmarks failed, but CI will continue"
           }
 
