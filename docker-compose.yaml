@@ -3,6 +3,7 @@ services:
     build: .
     command:
       - --capacity=1000
+      - --shards=16
       - --mutex-type=sync.Mutex
     deploy:
       resources:

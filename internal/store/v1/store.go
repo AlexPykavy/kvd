@@ -6,7 +6,7 @@ import (
 )
 
 type Store struct {
-	mu RWLocker
+	mu store.RWLocker
 
 	m map[string]string
 }
@@ -21,7 +21,7 @@ func WithCapacity(n int) StoreOption {
 
 func WithMutex() StoreOption {
 	return func(s *Store) {
-		s.mu = &Mutex{}
+		s.mu = &store.Mutex{}
 	}
 }
 
@@ -43,14 +43,14 @@ func NewStore(options ...StoreOption) *Store {
 	}
 
 	if s.mu == nil {
-		s.mu = &MutexStub{}
+		s.mu = &store.MutexStub{}
 	}
 
 	return s
 }
 
 func (s *Store) IsThreadSafe() bool {
-	if _, ok := s.mu.(*MutexStub); ok {
+	if _, ok := s.mu.(*store.MutexStub); ok {
 		return false
 	}
 

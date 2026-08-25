@@ -5,6 +5,7 @@ import (
 	"kvd/internal/store"
 	v0 "kvd/internal/store/v0"
 	v1 "kvd/internal/store/v1"
+	v2 "kvd/internal/store/v2"
 	"os"
 	"sync/atomic"
 	"testing"
@@ -43,6 +44,14 @@ func createAllBenchmarkStores() []struct {
 		{"v1.WithRWMutex()", v1.NewStore(v1.WithRWMutex())},
 		{"v1.WithRWMutex().WithCapacity(1000)", v1.NewStore(v1.WithRWMutex(), v1.WithCapacity(1000))},
 		{"v1.WithRWMutex().WithCapacity(1000_000)", v1.NewStore(v1.WithRWMutex(), v1.WithCapacity(10_000_000))},
+
+		{"v2.WithCapacity(1000)", v2.NewMyHashTable(v2.WithCapacity(1000))},
+		{"v2.WithCapacity(1000_000)", v2.NewMyHashTable(v2.WithCapacity(1000_000))},
+		{"v2.WithMutex(16).WithCapacity(1000)", v2.NewMyHashTable(v2.WithMutex(16), v2.WithCapacity(1000))},
+
+		{"v2.WithMutex(1024).WithCapacity(1000_000)", v2.NewMyHashTable(v2.WithMutex(1024), v2.WithCapacity(1000_000))},
+		{"v2.WithRWMutex(16).WithCapacity(1000)", v2.NewMyHashTable(v2.WithRWMutex(16), v2.WithCapacity(1000))},
+		{"v2.WithRWMutex(1024).WithCapacity(1000_000)", v2.NewMyHashTable(v2.WithRWMutex(1024), v2.WithCapacity(1000_000))},
 	}
 }
 
