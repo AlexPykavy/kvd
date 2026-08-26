@@ -35,11 +35,13 @@ func (h *StoreHandler) Get(w http.ResponseWriter, r *http.Request) {
 
 	if len(key) == 0 {
 		api.WriteError(w, http.StatusBadRequest, "Key is required")
+		return
 	}
 
 	value, err := h.s.Get(key)
 	if err != nil {
 		api.WriteError(w, http.StatusNotFound, fmt.Sprintf("An entry with the key %s not found", key))
+		return
 	}
 
 	dto := &EntryResponse{
@@ -70,6 +72,7 @@ func (h *StoreHandler) Put(w http.ResponseWriter, r *http.Request) {
 
 	if len(key) == 0 {
 		api.WriteError(w, http.StatusBadRequest, "Key is required")
+		return
 	}
 
 	var dto PutEntryRequest
@@ -103,10 +106,12 @@ func (h *StoreHandler) Delete(w http.ResponseWriter, r *http.Request) {
 
 	if len(key) == 0 {
 		api.WriteError(w, http.StatusBadRequest, "Key is required")
+		return
 	}
 
 	if err := h.s.Delete(key); err != nil {
 		api.WriteError(w, http.StatusNotFound, fmt.Sprintf("An entry with the key %s not found", key))
+		return
 	}
 
 	w.WriteHeader(http.StatusNoContent)
