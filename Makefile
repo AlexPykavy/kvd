@@ -1,6 +1,8 @@
-.PHONY: bench bench-prof test swagger swagger-fmt
+.PHONY: bench bench-prof k6 test swagger swagger-fmt
 
 BENCH=.
+
+ROOT_DIR := $(dir $(realpath $(lastword $(MAKEFILE_LIST))))
 SWAG := swag
 
 bench:
@@ -11,6 +13,17 @@ bench-prof:
 
 test:
 	go test -race -cover -v ./... 2>&1
+
+k6:
+	docker run --rm \
+		--name kvd-k6 \
+		-e BASE_URL="http://kvd:8080" \
+		-v $(ROOT_DIR)/k6:/opt/k6:ro \
+		--network kvd_default \
+		--cpus="4" \
+		grafana/k6:2.2.0 \
+		run \
+		/opt/k6/00-concurrent-health-check.js
 
 swagger:
 	$(SWAG) fmt -d ./api/v1
