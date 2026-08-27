@@ -45,15 +45,25 @@ func WithCapacity(n uint64) MyHashTableOption {
 }
 
 func WithMutex(n uint64) MyHashTableOption {
+	var s uint64 = 1
+	for s < n {
+		s <<= 1
+	}
+
 	return func(h *MyHashTable) {
-		h.shards = n
+		h.shards = s
 		h.muFactory = func() store.RWLocker { return &store.Mutex{} }
 	}
 }
 
 func WithRWMutex(n uint64) MyHashTableOption {
+	var s uint64 = 1
+	for s < n {
+		s <<= 1
+	}
+
 	return func(h *MyHashTable) {
-		h.shards = n
+		h.shards = s
 		h.muFactory = func() store.RWLocker { return &sync.RWMutex{} }
 	}
 }
