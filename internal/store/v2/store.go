@@ -111,6 +111,7 @@ func (h *MyHashTable) Put(key, value string) error {
 		pointer = &(*pointer).overflow
 	}
 
+	var created bool
 	if *pointer != nil {
 		(*pointer).value = value
 	} else {
@@ -118,7 +119,7 @@ func (h *MyHashTable) Put(key, value string) error {
 			key:   key,
 			value: value,
 		}
-		h.n.Add(1)
+		created = true
 	}
 
 	h.mu[shard].Unlock()
@@ -130,7 +131,7 @@ func (h *MyHashTable) Put(key, value string) error {
 		}
 	}
 
-	if h.n.Load() == int64(h.capacity) {
+	if created && h.n.Add(1) == int64(h.capacity) {
 		h.rebalanceNaive()
 	}
 
