@@ -11,6 +11,7 @@ services:
           cpus: 1
           memory: 512MB
     ports:
+      - 6060:6060
       - 8080:8080
 
   prometheus:

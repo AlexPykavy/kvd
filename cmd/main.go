@@ -23,6 +23,7 @@ const (
 
 func main() {
 	capacity := flag.Uint64("capacity", 0, "Store capacity")
+	enableInstrument := flag.Bool("instrument", true, "Enable instrumentation middleware (both metrics & logs)")
 	enablePprof := flag.Bool("pprof", false, "Enable pprof HTTP server")
 	shards := flag.Uint64("shards", 1, "Numer of locking shards")
 	mutexType := flag.String("mutex-type", mutexTypeStub, "Mutex type (stub|sync.Mutex|sync.RWMutex|). Default is stub")
@@ -72,12 +73,17 @@ func main() {
 	v1.HandleFunc("GET /count", v1Handler.Count)
 
 	mux := http.NewServeMux()
-	mux.Handle("/v1/", http.StripPrefix("/v1", middleware.InstrumentMiddleware(logger)(v1)))
+
+	if *enableInstrument {
+		mux.Handle("/v1/", http.StripPrefix("/v1", middleware.InstrumentMiddleware(logger)(v1)))
+		mux.Handle("/metrics", promhttp.Handler())
+	} else {
+		mux.Handle("/v1/", http.StripPrefix("/v1", v1))
+	}
+
 	mux.HandleFunc("GET /v1/swagger/spec", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "./docs/v1/swagger.json")
 	})
-
-	mux.Handle("/metrics", promhttp.Handler())
 	mux.Handle("/swagger/", httpSwagger.Handler(
 		httpSwagger.UIConfig(map[string]string{
 			"urls": `[
