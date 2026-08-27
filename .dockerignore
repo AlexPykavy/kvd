@@ -12,7 +12,9 @@ prometheus/
 tmp/
 
 *.log
+*.pprof
 *.xml
 
+.env
 docker-compose.yaml
 Dockerfile
