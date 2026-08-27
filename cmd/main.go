@@ -12,6 +12,7 @@ import (
 	httpSwagger "github.com/swaggo/http-swagger"
 
 	"net/http"
+	_ "net/http/pprof"
 )
 
 const (
@@ -22,6 +23,7 @@ const (
 
 func main() {
 	capacity := flag.Uint64("capacity", 0, "Store capacity")
+	enablePprof := flag.Bool("pprof", false, "Enable pprof HTTP server")
 	shards := flag.Uint64("shards", 1, "Numer of locking shards")
 	mutexType := flag.String("mutex-type", mutexTypeStub, "Mutex type (stub|sync.Mutex|sync.RWMutex|). Default is stub")
 	flag.Parse()
@@ -29,6 +31,16 @@ func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
 		Level: slog.LevelInfo,
 	}))
+
+	if *enablePprof {
+		go func() {
+			slog.Info("pprof server listening", slog.String("address", ":6060"))
+
+			if err := http.ListenAndServe(":6060", nil); err != nil {
+				slog.Error("Failed to start the pprof server", "error", err)
+			}
+		}()
+	}
 
 	options := []v2store.MyHashTableOption{}
 	if *capacity > 0 {
