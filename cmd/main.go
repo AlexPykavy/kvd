@@ -81,6 +81,10 @@ func main() {
 		mux.Handle("/v1/", http.StripPrefix("/v1", v1))
 	}
 
+	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("OK"))
+	})
 	mux.HandleFunc("GET /v1/swagger/spec", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "./docs/v1/swagger.json")
 	})

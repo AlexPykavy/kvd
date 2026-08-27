@@ -5,6 +5,7 @@ services:
       - --capacity=1000
       - --shards=16
       - --mutex-type=sync.Mutex
+    cpuset: "0"
     deploy:
       resources:
         limits:
