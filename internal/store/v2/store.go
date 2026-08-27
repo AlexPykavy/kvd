@@ -8,6 +8,7 @@ import (
 
 const (
 	DefaultMyHashTableCapacity = 16
+	DepthOffset                = 1000000000
 )
 
 type MyEntry struct {
@@ -25,6 +26,9 @@ type MyHashTable struct {
 	capacity uint64
 	hasher   func(string) uint64
 	entries  []*MyEntry
+
+	maxDepth   atomic.Uint64
+	rebalances atomic.Uint64
 }
 
 type MyHashTableOption func(*MyHashTable)
@@ -100,8 +104,10 @@ func (h *MyHashTable) Put(key, value string) error {
 
 	h.mu[shard].Lock()
 
+	depth := h.capacity
 	pointer := &h.entries[keyHash]
 	for *pointer != nil && (*pointer).key != key {
+		depth += DepthOffset
 		pointer = &(*pointer).overflow
 	}
 
@@ -116,6 +122,13 @@ func (h *MyHashTable) Put(key, value string) error {
 	}
 
 	h.mu[shard].Unlock()
+
+	for {
+		currentMaxDepth := h.maxDepth.Load()
+		if depth <= currentMaxDepth || h.maxDepth.CompareAndSwap(currentMaxDepth, depth) {
+			break
+		}
+	}
 
 	if h.n.Load() == int64(h.capacity) {
 		h.rebalanceNaive()
@@ -170,12 +183,22 @@ func (h *MyHashTable) Len() int {
 	return int(h.n.Load())
 }
 
+func (h *MyHashTable) MaxDepth() (uint32, uint32) {
+	return uint32(h.maxDepth.Load() / DepthOffset), uint32(h.maxDepth.Load() % DepthOffset)
+}
+
+func (h *MyHashTable) Rebalances() uint64 {
+	return h.rebalances.Load()
+}
+
 // TODO: it's ineffecient to make a rebalancing under all locks
 // - try using blue/green strategy, where all new elements are added
 // to a new slice while old ones are gradually moved to the new one
 // - Get() method must check both blue and green slices
 // - swap blue and gree once the migration is complete
 func (h *MyHashTable) rebalanceNaive() {
+	h.rebalances.Add(1)
+
 	for i := range h.mu {
 		h.mu[i].Lock()
 		defer h.mu[i].Unlock()
