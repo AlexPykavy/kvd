@@ -47,9 +47,10 @@ func createAllBenchmarkStores() []struct {
 
 		{"v2.WithCapacity(1000)", v2.NewMyHashTable(v2.WithCapacity(1000))},
 		{"v2.WithCapacity(1000_000)", v2.NewMyHashTable(v2.WithCapacity(1000_000))},
-		{"v2.WithMutex(16).WithCapacity(1000)", v2.NewMyHashTable(v2.WithMutex(16), v2.WithCapacity(1000))},
 
+		{"v2.WithMutex(16).WithCapacity(1000)", v2.NewMyHashTable(v2.WithMutex(16), v2.WithCapacity(1000))},
 		{"v2.WithMutex(1024).WithCapacity(1000_000)", v2.NewMyHashTable(v2.WithMutex(1024), v2.WithCapacity(1000_000))},
+
 		{"v2.WithRWMutex(16).WithCapacity(1000)", v2.NewMyHashTable(v2.WithRWMutex(16), v2.WithCapacity(1000))},
 		{"v2.WithRWMutex(1024).WithCapacity(1000_000)", v2.NewMyHashTable(v2.WithRWMutex(1024), v2.WithCapacity(1000_000))},
 	}
@@ -133,6 +134,11 @@ func BenchmarkStorePutConcurrently(b *testing.B) {
 					test.store.Put(keys[i], keys[i])
 				}
 			})
+
+			if h, ok := test.store.(store.MyHashTableDebug); ok {
+				maxDepth, capacity := h.MaxDepth()
+				b.Logf("h.Rebalances()=%d h.MaxDepth()=%d %d\n", h.Rebalances(), maxDepth, capacity)
+			}
 
 			if test.store.Len() != b.N {
 				b.Errorf("s.Len() = %d, want %d", test.store.Len(), b.N)

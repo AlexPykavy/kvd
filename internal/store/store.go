@@ -14,3 +14,8 @@ type Store interface {
 	Delete(key string) error
 	Len() int
 }
+
+type MyHashTableDebug interface {
+	MaxDepth() (maxDepth uint32, capacity uint32)
+	Rebalances() uint64
+}
