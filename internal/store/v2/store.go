@@ -219,8 +219,7 @@ func (h *MyHashTable) rebalanceNaive() {
 	newEntries := make([]*MyEntry, newCapacity)
 
 	for i := range h.entries {
-		entry := h.entries[i]
-		for entry != nil {
+		for h.entries[i] != nil {
 			newKeyHash := h.hasher(h.entries[i].key) % newCapacity
 
 			pointer := &newEntries[newKeyHash]
@@ -228,9 +227,9 @@ func (h *MyHashTable) rebalanceNaive() {
 				pointer = &(*pointer).overflow
 			}
 
-			pointer = &entry
-
-			entry = entry.overflow
+			*pointer = h.entries[i]
+			h.entries[i] = h.entries[i].overflow
+			(*pointer).overflow = nil
 		}
 	}
 
