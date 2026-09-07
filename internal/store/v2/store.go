@@ -184,7 +184,7 @@ func (h *MyHashTable) Delete(key string) error {
 		return store.ErrNotFound
 	}
 
-	pointer = &(*pointer).overflow
+	*pointer = (*pointer).overflow
 	h.n.Add(-1)
 
 	return nil
