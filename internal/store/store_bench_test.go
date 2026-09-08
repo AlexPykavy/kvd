@@ -157,6 +157,49 @@ func BenchmarkStorePutConcurrently(b *testing.B) {
 	}
 }
 
+func BenchmarkStorePutTwiceConcurrently(b *testing.B) {
+	tests := createAllBenchmarkStores()
+
+	for _, test := range tests {
+		b.Run(test.name, func(b *testing.B) {
+			if !test.store.IsThreadSafe() {
+				b.Skipf("skipping test because the store is not thread-safe and we will get %q", "fatal error: concurrent map writes")
+			}
+
+			b.ResetTimer()
+
+			var counter atomic.Uint64
+			b.RunParallel(func(pb *testing.PB) {
+				for pb.Next() {
+					i := counter.Add(1) - 1
+					test.store.Put(keys[i], keys[i])
+				}
+			})
+
+			if test.store.Len() != b.N {
+				b.Errorf("s.Len() = %d, want %d", test.store.Len(), b.N)
+			}
+
+			counter.Store(0)
+			b.RunParallel(func(pb *testing.PB) {
+				for pb.Next() {
+					i := counter.Add(1) - 1
+					test.store.Put(keys[i], keys[i])
+				}
+			})
+
+			if h, ok := test.store.(store.MyHashTableDebug); ok {
+				maxDepth, capacity := h.MaxDepth()
+				b.Logf("h.Rebalances()=%d h.MaxDepth()=%d %d\n", h.Rebalances(), maxDepth, capacity)
+			}
+
+			if test.store.Len() != b.N {
+				b.Errorf("s.Len() = %d, want %d", test.store.Len(), b.N)
+			}
+		})
+	}
+}
+
 func BenchmarkStoreGetConcurrently(b *testing.B) {
 	tests := createAllBenchmarkStores()
 
