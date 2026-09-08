@@ -141,6 +141,26 @@ func (h *MyHashTable) Put(key, value string) error {
 		}
 	}
 
+	// There are several issues with the current rebalancing implementation:
+	// 1. There can be multiple rebalancing happening at the same time, resulting in race condition and lost entries
+	// as every .rebalanceNaive() call creates a local slice to keep elements
+	//
+	// 2. There is still an issue with triggering the rabalancing as .rebalanceNaive() there is a chance
+	// that there will be so many concurrent puts that it will jump over the doubled h.capacity
+	// before the rebalancing actually aquires all the locks and as a result the rebalancing will be skipped
+	//
+	// 3. It's ineffecient to make a rebalancing under all locks as it blocks the readers.
+	// We could try using blue/green strategy, where all new entries are added to a new slice
+	// while old are gradually moved to the new one and the .Get() method checks both blue and green slices
+	//
+
+	// I see several options to mitigate the above issues:
+	// - rebalancingMu sync.RWMutex and RLock() during operations and Lock() during rebalancing might help
+	// - extend blue/green approach, so a MyHashTable has a list of MyStaticHashTable:
+	//   a. once rebalancing is needed, we just append an increased MyStaticHashTable to the front
+	//      and use it before the subsequent
+	//   b. we can also compact the shards on some operation path, e.g. Get
+	//   c. when all shards become migrated, the MyStaticHashTable is deleted from the list
 	if created && h.n.Add(1) == int64(h.capacity) {
 		h.rebalanceNaive()
 	}
@@ -184,7 +204,7 @@ func (h *MyHashTable) Delete(key string) error {
 		return store.ErrNotFound
 	}
 
-	pointer = &(*pointer).overflow
+	*pointer = (*pointer).overflow
 	h.n.Add(-1)
 
 	return nil
@@ -202,11 +222,6 @@ func (h *MyHashTable) Rebalances() uint64 {
 	return h.rebalances.Load()
 }
 
-// TODO: it's ineffecient to make a rebalancing under all locks
-// - try using blue/green strategy, where all new elements are added
-// to a new slice while old ones are gradually moved to the new one
-// - Get() method must check both blue and green slices
-// - swap blue and gree once the migration is complete
 func (h *MyHashTable) rebalanceNaive() {
 	h.rebalances.Add(1)
 
@@ -219,8 +234,7 @@ func (h *MyHashTable) rebalanceNaive() {
 	newEntries := make([]*MyEntry, newCapacity)
 
 	for i := range h.entries {
-		entry := h.entries[i]
-		for entry != nil {
+		for h.entries[i] != nil {
 			newKeyHash := h.hasher(h.entries[i].key) % newCapacity
 
 			pointer := &newEntries[newKeyHash]
@@ -228,9 +242,9 @@ func (h *MyHashTable) rebalanceNaive() {
 				pointer = &(*pointer).overflow
 			}
 
-			pointer = &entry
-
-			entry = entry.overflow
+			*pointer = h.entries[i]
+			h.entries[i] = h.entries[i].overflow
+			(*pointer).overflow = nil
 		}
 	}
 

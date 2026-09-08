@@ -132,3 +132,45 @@ func TestStoreDelete(t *testing.T) {
 		})
 	}
 }
+
+func TestWeGetWhatWePut(t *testing.T) {
+	t.Parallel()
+
+	const n = 10000
+	tests := createAllStores()
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			if test.store.Len() != 0 {
+				t.Errorf("s.Len() = %d, want 0", test.store.Len())
+			}
+
+			for i := range n {
+				if err := test.store.Put(keys[i], keys[i]); err != nil {
+					t.Errorf("s.Put(%q, %q) = %v, want %v", keys[i], keys[i], err, nil)
+				}
+			}
+
+			if test.store.Len() != n {
+				t.Errorf("s.Len() = %d, want %d", test.store.Len(), n)
+			}
+
+			for i := range n {
+				if obtained, err := test.store.Get(keys[i]); obtained != keys[i] || err != nil {
+					t.Errorf("s.Get(%q) = %q, %v, want %q, %v", keys[i], obtained, err, keys[i], nil)
+				}
+			}
+
+			for i := range n {
+				if err := test.store.Delete(keys[i]); err != nil {
+					t.Errorf("s.Delete(%q) = %v, want %v", keys[i], err, nil)
+				}
+			}
+
+			if test.store.Len() != 0 {
+				t.Errorf("s.Len() = %d, want 0", test.store.Len())
+			}
+		})
+	}
+}
