@@ -21,6 +21,7 @@ func createAllStores() []struct {
 		{"v1", v1.NewStore(v1.WithMutex())},
 		{"v1", v1.NewStore(v1.WithRWMutex())},
 		{"v2", v2.NewMyHashTable()},
+		{"v2.WithMutex(16).WithCapacity(1000)", v2.NewMyHashTable(store.WithMutex(16), store.WithCapacity(1000))},
 	}
 }
 

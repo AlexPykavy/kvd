@@ -2,7 +2,6 @@ package v2
 
 import (
 	"kvd/internal/store"
-	"sync"
 	"sync/atomic"
 )
 
@@ -18,9 +17,8 @@ type MyEntry struct {
 }
 
 type MyHashTable struct {
-	shards    uint64
-	muFactory func() store.RWLocker
-	mu        []store.RWLocker
+	shards uint64
+	mu     []store.RWLocker
 
 	n        atomic.Int64
 	capacity uint64
@@ -31,49 +29,23 @@ type MyHashTable struct {
 	rebalances atomic.Uint64
 }
 
-type MyHashTableOption func(*MyHashTable)
-
-func WithCapacity(n uint64) MyHashTableOption {
-	var c uint64 = 1
-	for c < n {
-		c <<= 1
+func NewMyHashTable(options ...store.StoreConfigOption) *MyHashTable {
+	cfg := &store.StoreConfig{
+		Capacity:      DefaultMyHashTableCapacity,
+		Shards:        1,
+		LockerFactory: func() store.RWLocker { return &store.MutexStub{} },
 	}
 
-	return func(h *MyHashTable) {
-		h.capacity = c
-	}
-}
-
-func WithMutex(n uint64) MyHashTableOption {
-	var s uint64 = 1
-	for s < n {
-		s <<= 1
+	for _, option := range options {
+		option(cfg)
 	}
 
-	return func(h *MyHashTable) {
-		h.shards = s
-		h.muFactory = func() store.RWLocker { return &store.Mutex{} }
-	}
-}
-
-func WithRWMutex(n uint64) MyHashTableOption {
-	var s uint64 = 1
-	for s < n {
-		s <<= 1
-	}
-
-	return func(h *MyHashTable) {
-		h.shards = s
-		h.muFactory = func() store.RWLocker { return &sync.RWMutex{} }
-	}
-}
-
-func NewMyHashTable(options ...MyHashTableOption) *MyHashTable {
 	h := &MyHashTable{
-		shards:    1,
-		muFactory: func() store.RWLocker { return &store.MutexStub{} },
-		n:         atomic.Int64{},
-		capacity:  DefaultMyHashTableCapacity,
+		shards: cfg.Shards,
+		mu:     make([]store.RWLocker, cfg.Shards),
+
+		n:        atomic.Int64{},
+		capacity: cfg.Capacity,
 		hasher: func(s string) uint64 {
 			var h uint64 = 14695981039346656037
 
@@ -84,17 +56,11 @@ func NewMyHashTable(options ...MyHashTableOption) *MyHashTable {
 
 			return h
 		},
+		entries: make([]*MyEntry, cfg.Capacity),
 	}
-
-	for _, option := range options {
-		option(h)
-	}
-
-	h.entries = make([]*MyEntry, h.capacity)
-	h.mu = make([]store.RWLocker, h.shards)
 
 	for i := range h.mu {
-		h.mu[i] = h.muFactory()
+		h.mu[i] = cfg.LockerFactory()
 	}
 
 	return h

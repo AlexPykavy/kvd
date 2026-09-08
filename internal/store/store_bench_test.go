@@ -45,14 +45,14 @@ func createAllBenchmarkStores() []struct {
 		{"v1.WithRWMutex().WithCapacity(1000)", v1.NewStore(v1.WithRWMutex(), v1.WithCapacity(1000))},
 		{"v1.WithRWMutex().WithCapacity(1000_000)", v1.NewStore(v1.WithRWMutex(), v1.WithCapacity(10_000_000))},
 
-		{"v2.WithCapacity(1000)", v2.NewMyHashTable(v2.WithCapacity(1000))},
-		{"v2.WithCapacity(1000_000)", v2.NewMyHashTable(v2.WithCapacity(1000_000))},
+		{"v2.WithCapacity(1000)", v2.NewMyHashTable(store.WithCapacity(1000))},
+		{"v2.WithCapacity(1000_000)", v2.NewMyHashTable(store.WithCapacity(1000_000))},
 
-		{"v2.WithMutex(16).WithCapacity(1000)", v2.NewMyHashTable(v2.WithMutex(16), v2.WithCapacity(1000))},
-		{"v2.WithMutex(1024).WithCapacity(1000_000)", v2.NewMyHashTable(v2.WithMutex(1024), v2.WithCapacity(1000_000))},
+		{"v2.WithMutex(16).WithCapacity(1000)", v2.NewMyHashTable(store.WithMutex(16), store.WithCapacity(1000))},
+		{"v2.WithMutex(1024).WithCapacity(1000_000)", v2.NewMyHashTable(store.WithMutex(1024), store.WithCapacity(1000_000))},
 
-		{"v2.WithRWMutex(16).WithCapacity(1000)", v2.NewMyHashTable(v2.WithRWMutex(16), v2.WithCapacity(1000))},
-		{"v2.WithRWMutex(1024).WithCapacity(1000_000)", v2.NewMyHashTable(v2.WithRWMutex(1024), v2.WithCapacity(1000_000))},
+		{"v2.WithRWMutex(16).WithCapacity(1000)", v2.NewMyHashTable(store.WithRWMutex(16), store.WithCapacity(1000))},
+		{"v2.WithRWMutex(1024).WithCapacity(1000_000)", v2.NewMyHashTable(store.WithRWMutex(1024), store.WithCapacity(1000_000))},
 	}
 }
 
