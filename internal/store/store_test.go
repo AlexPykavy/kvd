@@ -5,6 +5,7 @@ import (
 	v0 "kvd/internal/store/v0"
 	v1 "kvd/internal/store/v1"
 	v2 "kvd/internal/store/v2"
+	v3 "kvd/internal/store/v3"
 	"testing"
 )
 
@@ -21,6 +22,8 @@ func createAllStores() []struct {
 		{"v1", v1.NewStore(v1.WithMutex())},
 		{"v1", v1.NewStore(v1.WithRWMutex())},
 		{"v2", v2.NewMyHashTable()},
+		{"v2.WithMutex(16).WithCapacity(1000)", v2.NewMyHashTable(store.WithMutex(16), store.WithCapacity(1000))},
+		{"v3.WithMutex(16).WithCapacity(1000)", v3.NewMyHashTable(store.WithMutex(16), store.WithCapacity(1000))},
 	}
 }
 

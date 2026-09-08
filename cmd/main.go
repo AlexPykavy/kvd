@@ -4,6 +4,7 @@ import (
 	"flag"
 	"kvd/api/middleware"
 	v1api "kvd/api/v1"
+	"kvd/internal/store"
 	v2store "kvd/internal/store/v2"
 	"log/slog"
 	"os"
@@ -43,19 +44,19 @@ func main() {
 		}()
 	}
 
-	options := []v2store.MyHashTableOption{}
+	options := []store.StoreConfigOption{}
 	if *capacity > 0 {
 		logger.Info("Initializing the store with preset capacity", slog.Uint64("capacity", *capacity))
 
-		options = append(options, v2store.WithCapacity(*capacity))
+		options = append(options, store.WithCapacity(*capacity))
 	}
 
 	switch *mutexType {
 	case mutexTypeStub:
 	case mutexTypeSyncMutex:
-		options = append(options, v2store.WithMutex(*shards))
+		options = append(options, store.WithMutex(*shards))
 	case mutexTypeSyncRWMutex:
-		options = append(options, v2store.WithRWMutex(*shards))
+		options = append(options, store.WithRWMutex(*shards))
 	default:
 		logger.Error("Unsupported --mutex-type", "type", *mutexType)
 		os.Exit(1)
